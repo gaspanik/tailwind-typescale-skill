@@ -1,0 +1,300 @@
+---
+name: tailwind-typescale
+description: >
+  Apply a harmonious type scale to a Tailwind CSS v4 project by choosing a base
+  font size and a named scale ratio (from typescale.com). Sets --text-xs through
+  --text-9xl in @theme (covering all Tailwind text size classes) and maps h1–h6
+  font sizes in @layer base.
+  Use this skill when the user says things like:
+  "タイプスケール変えたいんだけど",
+  "フォントサイズを整えたい",
+  "見出しのサイズをちゃんとしたい",
+  "タイポグラフィのスケールを設定して",
+  "apply a type scale", "set up typography scale", "change font sizes".
+argument-hint: "[base-size] [scale-name]"
+allowed-tools: Bash, Read, Edit, AskUserQuestion
+---
+
+# Apply Type Scale
+
+Sets up a harmonious typography scale for Tailwind CSS v4 projects.
+
+---
+
+## Step 0: Pre-flight Checks
+
+Run all checks before asking the user anything.
+
+```bash
+# 1. Confirm src/style.css exists
+ls src/style.css 2>/dev/null || echo "not found"
+
+# 2. Check for DESIGN.md
+ls DESIGN.md 2>/dev/null || echo "not found"
+
+# 3. Check for existing --text-* variables and tailwind.config.js
+grep -n "\-\-text-" src/style.css 2>/dev/null || echo "none"
+ls tailwind.config.js 2>/dev/null && echo "v3 config found" || echo "no v3 config"
+```
+
+### Step 0-A: src/style.css not found
+
+Ask the user to confirm the project root, then stop.
+
+### Step 0-B: Report findings
+
+Display a summary of what was found:
+
+```
+## Current project state
+
+DESIGN.md:          found / not found
+tailwind.config.js: found (v3) / not found (v4)
+
+Type scale (--text-*):
+  Found:
+    --text-xs:   0.600rem 1.6  (existing)
+    --text-sm:   0.750rem 1.6  (existing)
+    ... (list all found variables)
+  Not found
+```
+
+**If `DESIGN.md` exists:**
+Read the file and check for any typography-related content (font-size, type scale, scale name, etc.).
+If found, display: "DESIGN.md contains typography settings:" followed by the relevant excerpt.
+
+**If `tailwind.config.js` exists (v3):**
+This skill requires Tailwind CSS v4. Warn and stop:
+
+```
+⚠️  tailwind.config.js detected — this project appears to use Tailwind CSS v3.
+This skill requires v4 (@theme directive and --text-* variables).
+For v3 projects, configure font sizes under theme.fontSize in tailwind.config.js.
+```
+
+### Step 0-C: Confirm overwrite if --text-* variables already exist
+
+If one or more `--text-*` variables are found, ask via `AskUserQuestion`:
+
+- Overwrite with a new scale
+- Cancel (keep existing)
+
+If the user cancels, stop.
+If the user confirms, proceed to Step 1.
+
+If no `--text-*` variables exist, proceed directly to Step 1.
+
+---
+
+## Step 1: Gather Parameters
+
+Interpret `$ARGUMENTS` as follows:
+
+- No arguments → Step 1-A (ask via AskUserQuestion)
+- Arguments provided → parse as `[base-size] [scale-name]` space-separated.
+  - e.g. `16px perfect-fourth`, `18 golden-ratio`
+  - Ask for any missing values in Step 1-A.
+
+### Step 1-A: Ask via AskUserQuestion
+
+Present both questions **at the same time** in a single `AskUserQuestion` call.
+
+**Q1: Base font size**
+- 16px – Standard (recommended)
+- 14px – Compact
+- 18px – Spacious
+- 20px – Large
+
+**Q2: Type scale**
+- Perfect Fourth 1.333 – Balanced and readable (recommended)
+- Major Third 1.250 – Gentle, compact
+- Golden Ratio 1.618 – Dynamic contrast
+- Minor Third 1.200 – Subtle, refined
+
+After both answers, proceed to Step 2.
+
+---
+
+## Step 2: Calculate the Scale
+
+Use the following formula:
+
+```
+base_rem = base font size (px) / 16
+ratio    = chosen scale ratio
+
+text-xs   = base_rem / ratio^2
+text-sm   = base_rem / ratio^1
+text-base = base_rem
+text-lg   = base_rem * ratio^1
+text-xl   = base_rem * ratio^2
+text-2xl  = base_rem * ratio^3
+text-3xl  = base_rem * ratio^4
+text-4xl  = base_rem * ratio^5
+text-5xl  = base_rem * ratio^6
+text-6xl  = base_rem * ratio^7
+text-7xl  = base_rem * ratio^8
+text-8xl  = base_rem * ratio^9
+text-9xl  = base_rem * ratio^10
+```
+
+Round each value to **3 decimal places** (e.g. `1.333rem`).
+
+### Recommended line-height per step (for `leading-*` utilities)
+
+> **Important:** Do NOT embed line-height in `--text-*` variables. In Tailwind v4, `--text-base: 1rem 1.5` generates `font-size: 1rem 1.5` which is invalid CSS — the browser ignores it and falls back to 16px. Always use only the rem value: `--text-base: 1rem`.
+
+Use Tailwind's `leading-*` utilities to control line-height per element:
+
+| Step | Suggested leading-* |
+|---|---|
+| text-xs / text-sm | `leading-relaxed` (1.625) |
+| text-base / text-lg | `leading-normal` (1.5) |
+| text-xl / text-2xl | `leading-snug` (1.375) |
+| text-3xl | `leading-snug` (1.375) |
+| text-4xl / text-5xl | `leading-tight` (1.25) |
+| text-6xl and above | `leading-none` (1.0) |
+
+---
+
+## Step 3: Show Preview and Confirm
+
+Display the calculated values as text (do not use AskUserQuestion here):
+
+```
+## Type Scale Preview
+
+Config: base {Xpx} × {Scale name} ({ratio})
+
+| Tailwind class | Size (rem) | Size (px) |
+|---|---|---|
+| text-xs   | X.XXXrem | XX.Xpx |
+| text-sm   | X.XXXrem | XX.Xpx |
+| text-base | X.XXXrem | XX.Xpx |
+| text-lg   | X.XXXrem | XX.Xpx |
+| text-xl   | X.XXXrem | XX.Xpx |
+| text-2xl  | X.XXXrem | XX.Xpx |
+| text-3xl  | X.XXXrem | XX.Xpx |
+| text-4xl  | X.XXXrem | XX.Xpx |
+| text-5xl  | X.XXXrem | XX.Xpx |
+| text-6xl  | X.XXXrem | XX.Xpx |
+| text-7xl  | X.XXXrem | XX.Xpx |
+| text-8xl  | X.XXXrem | XX.Xpx |
+| text-9xl  | X.XXXrem | XX.Xpx |
+
+h1–h6 mapping:
+  h1 → text-5xl ({size}rem)
+  h2 → text-4xl ({size}rem)
+  h3 → text-3xl ({size}rem)
+  h4 → text-2xl ({size}rem)
+  h5 → text-xl  ({size}rem)
+  h6 → text-lg  ({size}rem)
+```
+
+Then ask via `AskUserQuestion`:
+- Apply this scale (recommended)
+- Try a different scale
+- Cancel
+
+If "Try a different scale" → go back to Step 1.
+If "Cancel" → stop.
+
+---
+
+## Step 4: Edit src/style.css
+
+Add or overwrite `--text-*` variables in the `@theme` block of `src/style.css`.
+
+### Rules
+
+- Overwrite existing `--text-*` variables if present
+- Append before the closing `}` of `@theme` if not present
+- Create a new `@theme` block if none exists
+
+### Example output
+
+```css
+  /* Type scale: {Scale name} ({ratio}) — base {Xpx} */
+  --text-xs: X.XXXrem;
+  --text-sm: X.XXXrem;
+  --text-base: X.XXXrem;
+  --text-lg: X.XXXrem;
+  --text-xl: X.XXXrem;
+  --text-2xl: X.XXXrem;
+  --text-3xl: X.XXXrem;
+  --text-4xl: X.XXXrem;
+  --text-5xl: X.XXXrem;
+  --text-6xl: X.XXXrem;
+  --text-7xl: X.XXXrem;
+  --text-8xl: X.XXXrem;
+  --text-9xl: X.XXXrem;
+```
+
+Include a comment recording the scale name and base size for future reference.
+
+### h1–h6 font-size mapping
+
+Add `font-size` declarations to the `h1`–`h6` block inside `@layer base`.
+
+If `h1`–`h6` already exists in `@layer base`, add `font-size: var(--text-Nxl)` to each rule.
+If not, add a new ruleset:
+
+```css
+@layer base {
+  h1 { font-size: var(--text-5xl); }
+  h2 { font-size: var(--text-4xl); }
+  h3 { font-size: var(--text-3xl); }
+  h4 { font-size: var(--text-2xl); }
+  h5 { font-size: var(--text-xl); }
+  h6 { font-size: var(--text-lg); }
+}
+```
+
+If an existing `h1`–`h6` block already has properties like `font-family`, preserve them and only add `font-size`.
+
+---
+
+## Step 5: Done
+
+Detect the package manager from the lockfile before reporting:
+
+```bash
+ls pnpm-lock.yaml yarn.lock package-lock.json bun.lockb 2>/dev/null | head -1
+```
+
+| Lockfile | Package manager |
+|---|---|
+| `pnpm-lock.yaml` | `pnpm` |
+| `yarn.lock` | `yarn` |
+| `package-lock.json` | `npm` |
+| `bun.lockb` | `bun` |
+
+Use the detected package manager in the completion message:
+
+```
+## Applied
+
+{Scale name} scale (base {Xpx}, ratio {ratio}) applied to src/style.css.
+
+Changes:
+  - @theme: --text-xs through --text-9xl set (rem values only)
+  - @layer base: h1–h6 font-size mapped to scale
+
+Changes take effect immediately if the dev server is running.
+To start: <pm> run dev
+
+💡 The line-heights above are defaults. You can override them per element
+   using Tailwind's leading-* utilities:
+   leading-tight (1.25) / leading-snug (1.375) / leading-normal (1.5)
+   leading-relaxed (1.625) / leading-loose (2)
+```
+
+If `DESIGN.md` exists in the project root, also suggest appending the type scale info to the typography section.
+
+---
+
+## Notes
+
+- This skill is for Tailwind CSS **v4** only (`@theme` directive and `--text-*` variables)
+- For v3 projects, configure font sizes under `theme.fontSize` in `tailwind.config.js`
+- Covers all Tailwind text size classes: `text-xs` through `text-9xl`
