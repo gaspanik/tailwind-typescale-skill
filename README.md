@@ -31,7 +31,7 @@ Base font sizes: **14px / 16px / 18px / 20px** (or any custom value).
 
 ## How it works
 
-1. **Pre-flight** — Checks for `src/style.css`, reads `DESIGN.md` if present, detects existing `--text-*` variables, and warns if a `tailwind.config.js` (v3) is found.
+1. **Pre-flight** — Locates the Tailwind CSS entry file (any `.css` file containing `@import "tailwindcss"`), reads `DESIGN.md` if present, detects existing `--text-*` variables, and warns if a `tailwind.config.js` (v3) is found.
 2. **Parameters** — Asks for base size and scale ratio via `AskUserQuestion` (or reads from arguments).
 3. **Preview** — Shows a table of all 13 steps with rem and px values before applying anything.
 4. **Apply** — Writes `--text-xs` through `--text-9xl` into `@theme`, then maps `h1`–`h6` in `@layer base`.
@@ -51,19 +51,19 @@ skills/
 
 > **⚠️ Backup before applying**
 >
-> The skill overwrites `src/style.css` directly. Always make sure you can revert before running.
+> The skill overwrites your CSS entry file directly. Always make sure you can revert before running.
 >
 > - If you use Git: run `git status` to check for uncommitted changes, then `git stash` or `git commit` before proceeding.
-> - If you don't use Git: make a manual backup of `src/style.css`.
+> - If you don't use Git: make a manual backup of your CSS entry file.
 >
 > ---
 >
 > **⚠️ 適用前にバックアップを**
 >
-> このスキルは `src/style.css` を直接書き換えます。実行前に必ず元に戻せる状態にしておいてください。
+> このスキルは CSS エントリファイルを直接書き換えます。実行前に必ず元に戻せる状態にしておいてください。
 >
 > - Git を使っている場合は `git status` で未コミットの変更を確認し、`git stash` または `git commit` で保存してから実行してください。
-> - Git を使っていない場合は、`src/style.css` を手動でバックアップしておいてください。
+> - Git を使っていない場合は、CSS エントリファイルを手動でバックアップしておいてください。
 
 ---
 
