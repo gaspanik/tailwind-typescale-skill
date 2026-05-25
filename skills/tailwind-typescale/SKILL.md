@@ -26,35 +26,54 @@ Sets up a harmonious typography scale for Tailwind CSS v4 projects.
 Run all checks before asking the user anything.
 
 ```bash
-# 1. Confirm src/style.css exists
-ls src/style.css 2>/dev/null || echo "not found"
+# 1. Find the Tailwind CSS v4 entry file
+#    Primary signal: @import "tailwindcss" or @import 'tailwindcss'
+grep -rl --include="*.css" --exclude-dir=node_modules --exclude-dir=dist '@import ["'"'"']tailwindcss' . 2>/dev/null
 
 # 2. Check for DESIGN.md
 ls DESIGN.md 2>/dev/null || echo "not found"
 
-# 3. Check for existing --text-* variables and tailwind.config.js
-grep -n "\-\-text-" src/style.css 2>/dev/null || echo "none"
+# 3. Check for tailwind.config.js (v3 indicator)
 ls tailwind.config.js 2>/dev/null && echo "v3 config found" || echo "no v3 config"
 ```
 
-### Step 0-A: src/style.css not found
+### Step 0-A: Determine the target CSS file
 
-Ask the user to confirm the project root, then stop.
+**If exactly 1 file found:** Use it as the target. Proceed to Step 0-B.
+
+**If multiple files found:** Ask via `AskUserQuestion` which file to apply the scale to (list each path as an option). Use the chosen file as the target.
+
+**If no file found:** Run a fallback search for `@theme` blocks:
+
+```bash
+grep -rl --include="*.css" --exclude-dir=node_modules --exclude-dir=dist '@theme' . 2>/dev/null
+```
+
+Apply the same 1 / multiple / none logic above.
+
+**If still no file found:** Ask the user to provide the path to their Tailwind CSS entry file (the one containing `@import "tailwindcss"`), then stop with instructions.
 
 ### Step 0-B: Report findings
+
+Check for existing `--text-*` variables in the target file:
+
+```bash
+grep -n "\-\-text-" {target file} 2>/dev/null || echo "none"
+```
 
 Display a summary of what was found:
 
 ```
 ## Current project state
 
+Target CSS:         {path/to/file.css}
 DESIGN.md:          found / not found
 tailwind.config.js: found (v3) / not found (v4)
 
 Type scale (--text-*):
   Found:
-    --text-xs:   0.600rem 1.6  (existing)
-    --text-sm:   0.750rem 1.6  (existing)
+    --text-xs:   0.600rem  (existing)
+    --text-sm:   0.750rem  (existing)
     ... (list all found variables)
   Not found
 ```
@@ -201,9 +220,32 @@ If "Cancel" → stop.
 
 ---
 
-## Step 4: Edit src/style.css
+## Step 3.5: Backup Check
 
-Add or overwrite `--text-*` variables in the `@theme` block of `src/style.css`.
+Before writing any changes, run:
+
+```bash
+git status --short 2>/dev/null || echo "not a git repo"
+```
+
+- **Git repo with uncommitted changes:** Warn the user that `{target file}` will be overwritten. Recommend running `git stash` or `git commit` first, then ask via `AskUserQuestion`:
+  - Continue anyway
+  - Cancel (I'll stash/commit first)
+
+  If the user cancels, stop.
+
+- **Git repo, clean working tree:** Proceed silently.
+- **Not a git repo:** Warn that there is no version control, and recommend making a manual backup of `{target file}` before continuing. Ask via `AskUserQuestion`:
+  - Continue anyway
+  - Cancel (I'll back up the file first)
+
+  If the user cancels, stop.
+
+---
+
+## Step 4: Edit the target CSS file
+
+Add or overwrite `--text-*` variables in the `@theme` block of the detected target file.
 
 ### Rules
 
@@ -274,7 +316,7 @@ Use the detected package manager in the completion message:
 ```
 ## Applied
 
-{Scale name} scale (base {Xpx}, ratio {ratio}) applied to src/style.css.
+{Scale name} scale (base {Xpx}, ratio {ratio}) applied to {target file}.
 
 Changes:
   - @theme: --text-xs through --text-9xl set (rem values only)
