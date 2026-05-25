@@ -296,6 +296,73 @@ If an existing `h1`–`h6` block already has properties like `font-family`, pres
 
 ---
 
+## Step 4.5: Clean up explicit text-size classes from h1–h6
+
+After applying the scale, scan HTML files for heading elements that have explicit `text-*` size classes.
+These override the `@layer base` mapping and prevent the new scale from taking effect visually.
+
+### Detection
+
+```bash
+grep -rn "<h[1-6][^>]*class=\"[^\"]*text-\(xs\|sm\|base\|lg\|xl\|2xl\|3xl\|4xl\|5xl\|6xl\|7xl\|8xl\|9xl\)" \
+  --include="*.html" --include="*.tsx" --include="*.jsx" --include="*.vue" \
+  . | grep -v "node_modules" | grep -v "dist"
+```
+
+### Candidate list
+
+If any matches are found, display them as plain text before asking:
+
+```
+The following h1–h6 elements have explicit text-* size classes that override the scale mapping:
+
+  [1] post.html:68   <h2 class="text-ink font-semibold text-xl mt-10 mb-4">
+                      → text-xl would be removed (h2 uses text-4xl via @layer base)
+  [2] index.html:22  <h2 class="mt-2 font-medium text-primary text-base">
+                      → text-base would be removed (h2 uses text-4xl via @layer base)
+```
+
+Then ask via `AskUserQuestion`:
+- Remove all listed classes (recommended)
+- Choose individually
+- Skip (keep all as-is)
+
+If "Choose individually" → list each item as a numbered question and let the user type which numbers to remove.
+If "Skip" → proceed to Step 4.6 without changes.
+
+### Applying removals
+
+Remove only the `text-*` size class token from the `class` attribute. Preserve all other classes on the element.
+
+> **Note:** Do not remove `text-*` color classes (e.g. `text-ink`, `text-muted`, `text-primary`).
+> Only remove size utilities: `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl`, `text-2xl` … `text-9xl`.
+
+---
+
+## Step 4.6: Update DESIGN.md typography section
+
+If `DESIGN.md` exists in the project root, its typography section may now be out of sync with the new scale.
+
+Read the current `DESIGN.md` and check whether the `typography:` block in the YAML frontmatter contains font-size values. If so, display:
+
+```
+DESIGN.md contains typography tokens that reference font sizes.
+The new scale changes these values. Update DESIGN.md to match?
+```
+
+Ask via `AskUserQuestion`:
+- Update DESIGN.md (recommended)
+- Skip
+
+If "Update DESIGN.md":
+1. Recalculate px values for the relevant heading levels using the new scale (h1 → text-5xl, h2 → text-4xl, etc.)
+2. Update `fontSize` values in the `typography:` YAML block to match
+3. Update the `## Typography` markdown section body to reflect the new scale name and ratio
+
+If no font-size values are found in DESIGN.md, skip silently.
+
+---
+
 ## Step 5: Done
 
 Detect the package manager from the lockfile before reporting:
@@ -321,6 +388,8 @@ Use the detected package manager in the completion message:
 Changes:
   - @theme: --text-xs through --text-9xl set (rem values only)
   - @layer base: h1–h6 font-size mapped to scale
+  - HTML: explicit text-* removed from X heading elements  ← if any were removed
+  - DESIGN.md: typography section updated                  ← if updated
 
 Changes take effect immediately if the dev server is running.
 To start: <pm> run dev
@@ -330,8 +399,6 @@ To start: <pm> run dev
    leading-tight (1.25) / leading-snug (1.375) / leading-normal (1.5)
    leading-relaxed (1.625) / leading-loose (2)
 ```
-
-If `DESIGN.md` exists in the project root, also suggest appending the type scale info to the typography section.
 
 ---
 
