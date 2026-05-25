@@ -11,7 +11,8 @@ Typography scales get messy fast — arbitrary `text-[17px]` values, heading siz
 ```
 Project  →  tailwind-typescale  →  @theme with --text-xs … --text-9xl
                                 →  @layer base with h1–h6 font-size mapping
-                                →  DESIGN.md update suggestion (if present)
+                                →  explicit text-* removed from heading elements
+                                →  DESIGN.md typography section synced (if present)
 ```
 
 ---
@@ -35,7 +36,8 @@ Base font sizes: **14px / 16px / 18px / 20px** (or any custom value).
 2. **Parameters** — Asks for base size and scale ratio via `AskUserQuestion` (or reads from arguments).
 3. **Preview** — Shows a table of all 13 steps with rem and px values before applying anything.
 4. **Apply** — Writes `--text-xs` through `--text-9xl` into `@theme`, then maps `h1`–`h6` in `@layer base`.
-5. **Done** — Reports what changed and reminds you of `leading-*` utilities for line-height control.
+5. **Clean up** — Scans HTML/JSX/Vue files for heading elements with explicit `text-*` size classes that would override the new scale, and offers to remove them. Also syncs the `DESIGN.md` typography section if the file is present.
+6. **Done** — Reports what changed and reminds you of `leading-*` utilities for line-height control.
 
 ---
 
