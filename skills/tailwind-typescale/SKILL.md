@@ -167,12 +167,14 @@ Use Tailwind's `leading-*` utilities to control line-height per element:
 
 | Step | Suggested leading-* |
 |---|---|
-| text-xs / text-sm | `leading-relaxed` (1.625) |
+| text-xs / text-sm | `leading-tight` (1.25) |
 | text-base / text-lg | `leading-normal` (1.5) |
 | text-xl / text-2xl | `leading-snug` (1.375) |
 | text-3xl | `leading-snug` (1.375) |
 | text-4xl / text-5xl | `leading-tight` (1.25) |
-| text-6xl and above | `leading-none` (1.0) |
+| text-6xl and above | `leading-none` (overridden to 1.1 in @theme) |
+
+> **Note:** h1–h6 elements always get `leading-none` applied (Step 4.5), using the `--line-height-none: 1.1` override written to `@theme`.
 
 ---
 
@@ -270,7 +272,10 @@ Add or overwrite `--text-*` variables in the `@theme` block of the detected targ
   --text-7xl: X.XXXrem;
   --text-8xl: X.XXXrem;
   --text-9xl: X.XXXrem;
+  --line-height-none: 1.1;
 ```
+
+The `--line-height-none` override sets `leading-none` to `1.1` instead of Tailwind's default `1.0`, giving headings a slightly looser line-height that works better at display sizes. All h1–h6 elements will use `leading-none` (see Step 4.5).
 
 Include a comment recording the scale name and base size for future reference.
 
@@ -296,15 +301,24 @@ If an existing `h1`–`h6` block already has properties like `font-family`, pres
 
 ---
 
-## Step 4.5: Clean up explicit text-size classes from h1–h6
+## Step 4.5: Clean up explicit text-size classes from h1–h6, and normalize leading
 
-After applying the scale, scan HTML files for heading elements that have explicit `text-*` size classes.
-These override the `@layer base` mapping and prevent the new scale from taking effect visually.
+After applying the scale, scan HTML files for heading elements that have explicit `text-*` size classes or `leading-*` classes.
+`text-*` size classes override the `@layer base` mapping and prevent the new scale from taking effect.
+`leading-*` classes will be replaced with `leading-none` (which is now overridden to `1.1` in `@theme`).
 
 ### Detection
 
+Run both searches:
+
 ```bash
+# text-* size classes on headings
 grep -rn "<h[1-6][^>]*class=\"[^\"]*text-\(xs\|sm\|base\|lg\|xl\|2xl\|3xl\|4xl\|5xl\|6xl\|7xl\|8xl\|9xl\)" \
+  --include="*.html" --include="*.tsx" --include="*.jsx" --include="*.vue" \
+  . | grep -v "node_modules" | grep -v "dist"
+
+# leading-* classes on headings
+grep -rn "<h[1-6][^>]*class=\"[^\"]*leading-" \
   --include="*.html" --include="*.tsx" --include="*.jsx" --include="*.vue" \
   . | grep -v "node_modules" | grep -v "dist"
 ```
@@ -314,25 +328,30 @@ grep -rn "<h[1-6][^>]*class=\"[^\"]*text-\(xs\|sm\|base\|lg\|xl\|2xl\|3xl\|4xl\|
 If any matches are found, display them as plain text before asking:
 
 ```
-The following h1–h6 elements have explicit text-* size classes that override the scale mapping:
+The following h1–h6 elements have explicit text-* size classes that override the scale mapping,
+or leading-* classes that will be replaced with leading-none (line-height: 1.1):
 
-  [1] post.html:68   <h2 class="text-ink font-semibold text-xl mt-10 mb-4">
-                      → text-xl would be removed (h2 uses text-4xl via @layer base)
+  [1] post.html:68   <h2 class="text-ink font-semibold text-xl leading-tight mt-10 mb-4">
+                      → text-xl removed (h2 uses text-4xl via @layer base)
+                      → leading-tight replaced with leading-none
   [2] index.html:22  <h2 class="mt-2 font-medium text-primary text-base">
-                      → text-base would be removed (h2 uses text-4xl via @layer base)
+                      → text-base removed (h2 uses text-4xl via @layer base)
 ```
 
 Then ask via `AskUserQuestion`:
-- Remove all listed classes (recommended)
+- Apply all changes (recommended)
 - Choose individually
 - Skip (keep all as-is)
 
-If "Choose individually" → list each item as a numbered question and let the user type which numbers to remove.
+If "Choose individually" → list each item as a numbered question and let the user type which numbers to apply.
 If "Skip" → proceed to Step 4.6 without changes.
 
-### Applying removals
+### Applying changes
 
-Remove only the `text-*` size class token from the `class` attribute. Preserve all other classes on the element.
+For each matched heading element:
+1. Remove only the `text-*` size class token from the `class` attribute (preserve all other classes).
+2. Replace any `leading-*` class with `leading-none`. If multiple `leading-*` classes exist, replace all with a single `leading-none`.
+3. If no `leading-*` class exists on the element, add `leading-none` to the class list.
 
 > **Note:** Do not remove `text-*` color classes (e.g. `text-ink`, `text-muted`, `text-primary`).
 > Only remove size utilities: `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl`, `text-2xl` … `text-9xl`.
@@ -387,17 +406,22 @@ Use the detected package manager in the completion message:
 
 Changes:
   - @theme: --text-xs through --text-9xl set (rem values only)
+  - @theme: --line-height-none overridden to 1.1
   - @layer base: h1–h6 font-size mapped to scale
   - HTML: explicit text-* removed from X heading elements  ← if any were removed
+  - HTML: leading-* on headings unified to leading-none    ← if any were changed
   - DESIGN.md: typography section updated                  ← if updated
 
 Changes take effect immediately if the dev server is running.
 To start: <pm> run dev
 
-💡 The line-heights above are defaults. You can override them per element
-   using Tailwind's leading-* utilities:
+💡 Heading line-height is set to 1.1 via --line-height-none.
+   To adjust it, change this value in your CSS @theme block:
+
+     --line-height-none: 1.1;   /* try 1.0 for tighter, 1.2 for looser */
+
+   Or override individual headings with a different leading-* class:
    leading-tight (1.25) / leading-snug (1.375) / leading-normal (1.5)
-   leading-relaxed (1.625) / leading-loose (2)
 ```
 
 ---
