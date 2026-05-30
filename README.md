@@ -36,7 +36,7 @@ Base font sizes: **14px / 16px / 18px / 20px** (or any custom value).
 2. **Parameters** — Asks for base size and scale ratio via `AskUserQuestion` (or reads from arguments).
 3. **Preview** — Shows a table of all 13 steps with rem and px values before applying anything.
 4. **Apply** — Writes `--text-xs` through `--text-9xl` into `@theme`, then maps `h1`–`h6` in `@layer base`.
-5. **Clean up** — Scans HTML/JSX/Vue files for heading elements with explicit `text-*` size classes that would override the new scale, and offers to remove them. Also replaces any `leading-*` classes on headings with `leading-none` (which is overridden to `1.1` in `@theme`). Syncs the `DESIGN.md` typography section if the file is present.
+5. **Clean up** — Scans HTML/JSX/Vue/Astro files for heading elements with explicit `text-*` size classes that would override the new scale, and offers to remove them. Also removes any `leading-*` classes on headings (line-height is now handled by `@layer base`). Syncs the `DESIGN.md` typography section if the file is present.
 6. **Done** — Reports what changed and shows how to adjust `--line-height-none` if needed.
 
 ---
@@ -123,7 +123,7 @@ The skill description instructs Claude to use it whenever:
 
 ## Line-height
 
-For body text, line-height is left to Tailwind's `leading-*` utilities so you can tune it per element. For headings (h1–h6), the skill automatically applies `leading-none` and overrides its value to `1.1` via `--line-height-none` in `@theme` — tighter than Tailwind's default `1.0`, which suits display sizes better.
+For body text, line-height is left to Tailwind's `leading-*` utilities so you can tune it per element. For headings (h1–h6), the skill writes `line-height: var(--line-height-none)` directly in `@layer base`, and sets `--line-height-none: 1.1` in `@theme` — slightly looser than Tailwind's default `1.0`, which suits display sizes better.
 
 | Step | Suggested utility |
 |---|---|
