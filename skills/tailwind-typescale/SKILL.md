@@ -318,16 +318,18 @@ After applying the scale, scan HTML files for heading elements that have explici
 Run both searches:
 
 ```bash
-# text-* size classes on headings
-grep -rn "<h[1-6][^>]*class=\"[^\"]*text-\(xs\|sm\|base\|lg\|xl\|2xl\|3xl\|4xl\|5xl\|6xl\|7xl\|8xl\|9xl\)" \
+# text-* size classes on headings (className= covers React .tsx/.jsx files)
+grep -rn "<h[1-6][^>]*class\(Name\)\?=\"[^\"]*text-\(xs\|sm\|base\|lg\|xl\|2xl\|3xl\|4xl\|5xl\|6xl\|7xl\|8xl\|9xl\)" \
   --include="*.html" --include="*.tsx" --include="*.jsx" --include="*.vue" --include="*.astro" \
   . | grep -v "node_modules" | grep -v "dist"
 
 # leading-* classes on headings
-grep -rn "<h[1-6][^>]*class=\"[^\"]*leading-" \
+grep -rn "<h[1-6][^>]*class\(Name\)\?=\"[^\"]*leading-" \
   --include="*.html" --include="*.tsx" --include="*.jsx" --include="*.vue" --include="*.astro" \
   . | grep -v "node_modules" | grep -v "dist"
 ```
+
+> React components may also build heading classes dynamically (template literals, `cn()` etc.) — the grep only catches literal `class` / `className` strings. If the project is React-based, additionally check heading components visually.
 
 ### Candidate list
 
